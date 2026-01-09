@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>لعبة الأعداد الصحيحة</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#e0f2fe,#fefce8);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    direction:rtl;
+}
+.container{
+    background:white;
+    width:95%;
+    max-width:900px;
+    padding:25px;
+    border-radius:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+    text-align:center;
+}
+h1{color:#1e3a8a;}
+.unit-title{
+    color:#0369a1;
+    font-weight:bold;
+    margin:10px 0;
+}
+.question{
+    font-size:1.3rem;
+    margin:20px 0;
+}
+.options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+.option{
+    padding:15px;
+    font-size:1.1rem;
+    border:none;
+    border-radius:15px;
+    background:#e0f2fe;
+    cursor:pointer;
+}
+.option:hover{background:#bae6fd;}
+.correct{background:#bbf7d0 !important;}
+.wrong{background:#fecaca !important;}
+.progress{
+    margin-top:15px;
+    font-weight:bold;
+}
+.report{
+    text-align:right;
+    line-height:2;
+}
+.star{
+    font-size:2rem;
+    color:gold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="game">
+<h1>🎯 تحدي الأعداد الصحيحة</h1>
+<div class="unit-title" id="unit"></div>
+<div class="question" id="question"></div>
+<div class="options" id="options"></div>
+<div id="feedback"></div>
+<div class="progress" id="progress"></div>
+</div>
+
+<audio id="correctSound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3"></audio>
+<audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3"></audio>
+
+<script>
+const units = [
+{
+name:"الوحدة الأولى: الأعداد الصحيحة والتمثيل البياني",
+questions:[
+{q:"ما العدد الذي يمثل خسارة 10 درجات تحت الصفر؟",o:["10","-10","0","+10"],a:1},
+{q:"أين يُمثَّل العدد السالب على خط الأعداد؟",o:["يمين الصفر","يسار الصفر","أعلى الصفر","لا يمثل"],a:1},
+{q:"العدد الذي لا يعد موجبًا ولا سالبًا هو:",o:["1","-1","0","2"],a:2},
+{q:"أي عدد يمثل استدانة؟",o:["+5","0","-5","+1"],a:2},
+{q:"مجموعة {1-, 2, 0} تمثل:",o:["كسور","أعداد صحيحة","أعداد موجبة","أعداد سالبة"],a:1}
+]
+},
+{
+name:"الوحدة الثانية: القيمة المطلقة والأعداد المتقابلة",
+questions:[
+{q:"ما المقصود بالقيمة المطلقة؟",o:["الإشارة","الاتجاه","المسافة من الصفر","نوع العدد"],a:2},
+{q:"| -7 | يساوي:",o:["-7","7","0","14"],a:1},
+{q:"ما مقابل العدد -4؟",o:["-4","4","0","8"],a:1},
+{q:"القيمة المطلقة لا يمكن أن تكون:",o:["موجبة","صفر","سالبة","عدد صحيح"],a:2},
+{q:"مقابل المقابل للعدد 6 هو:",o:["-6","6","0","12"],a:1}
+]
+},
+{
+name:"الوحدة الثالثة: تفكير رياضي ومراجعة",
+questions:[
+{q:"|3| + |-2| = ؟",o:["1","5","-5","0"],a:1},
+{q:"أي عدد أبعد عن الصفر؟",o:["-2","+2","-5","1"],a:2},
+{q:"إذا كان الرصيد -15 فهذا يعني:",o:["ربح","دين","صفر","زيادة"],a:1},
+{q:"|0| يساوي:",o:["0","1","-1","غير معرف"],a:0},
+{q:"|4| + |-4| = ؟",o:["4","8","0","-8"],a:1}
+]
+}
+];
+
+let u=0,q=0,score=0;
+let unitScores = [0,0,0];
+
+function load(){
+document.getElementById("unit").textContent = units[u].name;
+document.getElementById("question").textContent = units[u].questions[q].q;
+document.getElementById("options").innerHTML="";
+document.getElementById("feedback").innerHTML="";
+document.getElementById("progress").textContent =
+`سؤال ${q+1} / ${units[u].questions.length}`;
+
+units[u].questions[q].o.forEach((opt,i)=>{
+let b=document.createElement("button");
+b.className="option";
+b.textContent=opt;
+b.onclick=()=>check(i,b);
+document.getElementById("options").appendChild(b);
+});
+}
+
+function check(i,b){
+if(i===units[u].questions[q].a){
+b.classList.add("correct");
+document.getElementById("correctSound").play();
+score++;
+unitScores[u]++;
+setTimeout(next,800);
+}else{
+b.classList.add("wrong");
+document.getElementById("wrongSound").play();
+}
+}
+
+function next(){
+q++;
+if(q>=units[u].questions.length){
+u++; q=0;
+}
+if(u<units.length){
+load();
+}else{
+report();
+}
+}
+
+function report(){
+let total = units.reduce((s,u)=>s+u.questions.length,0);
+let percent = Math.round((score/total)*100);
+
+document.getElementById("game").innerHTML=`
+<h1>📊 تقرير الأداء</h1>
+<div class="report">
+<p>الدرجة النهائية: <b>${score} / ${total}</b></p>
+<p>نسبة النجاح: <b>${percent}%</b></p>
+<hr>
+<p>الوحدة الأولى: ${unitScores[0]} / 5</p>
+<p>الوحدة الثانية: ${unitScores[1]} / 5</p>
+<p>الوحدة الثالثة: ${unitScores[2]} / 5</p>
+<hr>
+<p>${percent>=80?"🌟 أداء ممتاز":"📘 تحتاج إلى مزيد من التدريب"}</p>
+</div>`;
+}
+
+load();
+</script>
+
+</body>
+</html>
